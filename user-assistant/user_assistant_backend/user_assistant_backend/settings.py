@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+from urllib.parse import quote_plus
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -82,6 +84,31 @@ DATABASES = {
     }
 }
 
+
+
+AZURE_REDIS_HOST = os.environ.get('REDIS_HOST', '') 
+AZURE_REDIS_KEY = os.environ.get('REDIS_KEY', '')
+AZURE_REDIS_PORT = 6380
+AZURE_REDIS_DB = os.environ.get('REDIS_DB', '0')
+
+ENCODED_KEY = quote_plus(AZURE_REDIS_KEY)
+
+AZURE_REDIS_URI = (
+    f"rediss://:{ENCODED_KEY}@{AZURE_REDIS_HOST}:{AZURE_REDIS_PORT}/{AZURE_REDIS_DB}"
+    "?ssl_cert_reqs=none"
+)
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django_redis.cache.RedisCache',
+#         "LOCATION": 'rediss://{AZURE_REDIS_HOST}:{AZURE_REDIS_PORT}/{AZURE_REDIS_DB}',
+#         'OPTIONS': {
+#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#             'PASSWORD': AZURE_REDIS_KEY,
+#             'SSL': True
+#         }
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
