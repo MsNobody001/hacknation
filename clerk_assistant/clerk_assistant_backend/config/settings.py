@@ -11,24 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
-from dotenv import load_dotenv
 import os
-
-load_dotenv()
-
-def get_azure_sql_token():
-    # Only import these when needed, as they might not be available locally
-    from azure.identity import DefaultAzureCredential
-    
-    # The default credential chain will automatically use the Managed Identity 
-    # when running on Azure App Service.
-    credential = DefaultAzureCredential()
-    
-    # Use the resource URL for Azure SQL Database
-    token = credential.get_token("https://database.windows.net/.default")
-    
-    # pyodbc expects the raw token string
-    return token.token
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -99,15 +82,11 @@ DATABASES = {
         'NAME': 'db-zus',
         'HOST': 'sql-zus.database.windows.net',
         'PORT': '',
-        'USER':'webapp-clerk-assistant',
-        'PASSWORD':'',
+        'USER': os.environ.get('SQL_DB_USER'),   
+        'PASSWORD': os.environ.get('SQL_DB_PASSWORD'),
         'OPTIONS': {
             "driver": 'ODBC Driver 18 for SQL Server',
             "extra_params": 'Encrypt=yes;TrustServerCertificate=no;',
-            "auth_token": get_azure_sql_token,
-            "connection_settings": {
-                "Authentication": "ActiveDirectoryManagedIdentity" 
-            },
         },
     },
 }
