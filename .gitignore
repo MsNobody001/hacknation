@@ -12,3 +12,5 @@ static*/
 venv
 env/
 .idea/
+*.pdf
+*.json

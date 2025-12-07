@@ -1,0 +1,18 @@
+Przeanalizuj poniższą dokumentację wypadkową i określ 
+jakie dokumenty i wyjaśnienia wymagane są od poszkodowanego w celu pełnego ustalenia czy zdarzenie 
+spełnia definicję wypadku przy pracy.
+
+INFORMACJE O DZIAŁALNOŚCI:
+{business_context}
+
+DOSTARCZONA DOKUMENTACJA:
+{documents_text}
+
+Przeprowadź szczegółową analizę:
+1. Czy dostarczone zostały wyjaśnienia poszkodowanego? Jeśli tak, czy zawierają wszystkie niezbędne informacje?
+2. Czy dostarczone zostało zaświadczenie o wypadku?
+3. Dla każdego z 4 kryteriów (nagłość, przyczyna zewnętrzna, uraz, związek z pracą) - jakie informacje brakują?
+4. Na podstawie opisu wypadku - jakie dodatkowe dokumenty powinny być pozyskane?
+5. Czy istnieje wątpliwość wymagająca opinii medycznej?
+
+Zwróć wyniki w formacie JSON z konkretnymi rekomendacjami dla pracownika.
