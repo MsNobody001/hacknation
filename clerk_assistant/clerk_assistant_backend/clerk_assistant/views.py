@@ -107,12 +107,9 @@ class AnalysisViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
                 status=status.HTTP_409_CONFLICT
             )
         
-        analysis.status = 'processing'
-        analysis.save()
-        
-        # TODO: Trigger Celery task chain here
-        # from .tasks import process_analysis_chain
-        # process_analysis_chain.delay(analysis.id)
+        # Trigger Celery task chain
+        from .tasks import run_analysis_pipeline
+        task_id = run_analysis_pipeline(str(analysis.id))
         
         status_url = request.build_absolute_uri(
             f'/api/analyses/{analysis.id}/status/'
@@ -122,7 +119,8 @@ class AnalysisViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
             {
                 'message': 'Processing started',
                 'analysis_id': str(analysis.id),
-                'status': analysis.status,
+                'status': 'processing',
+                'task_id': task_id,
                 'status_url': status_url
             },
             status=status.HTTP_202_ACCEPTED
