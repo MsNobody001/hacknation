@@ -99,6 +99,8 @@ DATABASES = {
         'NAME': 'db-zus',
         'HOST': 'sql-zus.database.windows.net',
         'PORT': '',
+        'USER':'webapp-clerk-assistant',
+        'PASSWORD':'',
         'OPTIONS': {
             "driver": 'ODBC Driver 18 for SQL Server',
             "extra_params": 'Encrypt=yes;TrustServerCertificate=no;',
