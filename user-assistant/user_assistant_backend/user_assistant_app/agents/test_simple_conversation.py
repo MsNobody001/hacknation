@@ -8,6 +8,9 @@ sys.path.append(str(Path(__file__).parent))
 
 from accident_data_collector_agent import AccidentDataCollectorAgent
 
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def main():
     print("=" * 60)
