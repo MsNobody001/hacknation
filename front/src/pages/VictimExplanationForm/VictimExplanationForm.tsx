@@ -61,6 +61,16 @@ const VictimExplanationForm: React.FC = () => {
 
   const [record, setRecord] = useState<AccidentExplanationRecord>(initialRecord);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    personalData: true,
+    accidentDetails: false,
+    machineRelated: false,
+    otherMachinery: false,
+    safety: false,
+    intoxication: false,
+    authorities: false,
+    medicalHelp: false,
+  });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateRecord = useCallback((path: (string | number)[], value: any) => {
@@ -109,14 +119,62 @@ const VictimExplanationForm: React.FC = () => {
   useEffect(() => {
     if (!ctx.collectedData) return;
 
-    if (ctx.collectedData.accident_date) updateRecord(['accidentDetails', 'date'], convertDate(ctx.collectedData.accident_date));
-    if (ctx.collectedData.accident_time) updateRecord(['accidentDetails', 'time'], ctx.collectedData.accident_time);
-    if (ctx.collectedData.location) updateRecord(['accidentDetails', 'location'], ctx.collectedData.location);
-    if (ctx.collectedData.work_start_time) updateRecord(['accidentDetails', 'plannedWorkStart'], ctx.collectedData.work_start_time);
-    if (ctx.collectedData.work_end_time) updateRecord(['accidentDetails', 'plannedWorkEnd'], ctx.collectedData.work_end_time);
-    if (ctx.collectedData.injury_type) updateRecord(['medicalHelp', 'diagnosedInjury'], ctx.collectedData.injury_type);
-    if (ctx.collectedData.circumstances) updateRecord(['accidentCircumstances'], ctx.collectedData.circumstances);
-    if (ctx.collectedData.cause) updateRecord(['accidentCause'], ctx.collectedData.cause);
+    const sectionsToOpen: Record<string, boolean> = {};
+
+    // Accident Details
+    if (ctx.collectedData.accident_date) {
+      updateRecord(['accidentDetails', 'date'], convertDate(ctx.collectedData.accident_date));
+      sectionsToOpen.accidentDetails = true;
+    }
+    if (ctx.collectedData.accident_time) {
+      updateRecord(['accidentDetails', 'time'], ctx.collectedData.accident_time);
+      sectionsToOpen.accidentDetails = true;
+    }
+    if (ctx.collectedData.location) {
+      updateRecord(['accidentDetails', 'location'], ctx.collectedData.location);
+      sectionsToOpen.accidentDetails = true;
+    }
+    if (ctx.collectedData.work_start_time) {
+      updateRecord(['accidentDetails', 'plannedWorkStart'], ctx.collectedData.work_start_time);
+      sectionsToOpen.accidentDetails = true;
+    }
+    if (ctx.collectedData.work_end_time) {
+      updateRecord(['accidentDetails', 'plannedWorkEnd'], ctx.collectedData.work_end_time);
+      sectionsToOpen.accidentDetails = true;
+    }
+    
+    if (ctx.collectedData.activity_before_accident) {
+      updateRecord(['workActivityBeforeAccident'], ctx.collectedData.activity_before_accident);
+      sectionsToOpen.accidentDetails = true;
+    }
+    if (ctx.collectedData.circumstances) {
+      updateRecord(['accidentCircumstances'], ctx.collectedData.circumstances);
+      sectionsToOpen.accidentDetails = true;
+    }
+    if (ctx.collectedData.cause || ctx.collectedData.direct_cause) {
+      const causeText = [ctx.collectedData.cause, ctx.collectedData.direct_cause].filter(Boolean).join(' | ');
+      updateRecord(['accidentCause'], causeText);
+      sectionsToOpen.accidentDetails = true;
+    }
+
+    if (ctx.collectedData.machines_involved) {
+      sectionsToOpen.machineRelated = true;
+    }
+
+    if (ctx.collectedData.injury_type || ctx.collectedData.medical_help) {
+      if (ctx.collectedData.injury_type) {
+        updateRecord(['medicalHelp', 'diagnosedInjury'], ctx.collectedData.injury_type);
+      }
+      sectionsToOpen.medicalHelp = true;
+    }
+
+    if (ctx.collectedData.investigation) {
+      sectionsToOpen.authorities = true;
+    }
+
+    if (Object.keys(sectionsToOpen).length > 0) {
+      setOpenSections(prev => ({ ...prev, ...sectionsToOpen }));
+    }
   }, [ctx.collectedData, updateRecord]);
 
   const renderPersonSection = useMemo(
@@ -137,27 +195,27 @@ const VictimExplanationForm: React.FC = () => {
           options={['Dowod', 'Paszport', ]}
         />
         <InputField
-          label="Seria numer"
+          label="Numer serii"
           id="idNumber"
           value={record.personalData.idNumber}
           onChange={e => handleChange(e, ['personalData', 'idNumber'])}
           required
         />
         <InputField
-          label="Birth Date"
+          label="Data urodzenia"
           id="birthDate"
           type="date"
           value={record.personalData.birthDate}
           onChange={e => handleChange(e, ['personalData', 'birthDate'])}
         />
         <InputField
-          label="Birth Place"
+          label="Miejsce urodzenia"
           id="birthPlace"
           value={record.personalData.birthPlace}
           onChange={e => handleChange(e, ['personalData', 'birthPlace'])}
         />
         <InputField
-          label="Phone Number"
+          label="Numer telefonu"
           id="phoneNumber"
           type="tel"
           value={record.personalData.phoneNumber}
@@ -172,8 +230,8 @@ const VictimExplanationForm: React.FC = () => {
           className="md:col-span-1"
         />
         <InputField
-          label="Address"
-          id="address"
+          label="Adres"
+          id="adres"
           value={record.personalData.address}
           onChange={e => handleChange(e, ['personalData', 'address'])}
           className="md:col-span-2"
@@ -218,7 +276,7 @@ const VictimExplanationForm: React.FC = () => {
           onChange={e => handleChange(e, ['accidentDetails', 'plannedWorkEnd'])}
         />
         <InputField
-          label="Miesjce wypadku"
+          label="Miejsce wypadku"
           id="accLocation"
           value={record.accidentDetails.location}
           onChange={e => handleChange(e, ['accidentDetails', 'location'])}
@@ -329,7 +387,7 @@ const VictimExplanationForm: React.FC = () => {
       <div>
         <CheckboxField
           id="authoritiesInvolved"
-          label="Were State Authorities Involved?"
+          label="Czy służby porządkowe były zaangażowane?"
           checked={isArray}
           onChange={checked => updateRecord(['stateAuthorityActions'], checked ? [] : false)}
         />
@@ -386,7 +444,7 @@ const VictimExplanationForm: React.FC = () => {
             onClick={handleAddAction}
             className="mt-4 flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-150 ease-in-out shadow-md"
           >
-            <Plus className="w-4 h-4 mr-2" /> Add Authority Action
+            <Plus className="w-4 h-4 mr-2" /> Dodaj akcję nadzorczą
           </button>
         )}
       </div>
@@ -401,7 +459,7 @@ const VictimExplanationForm: React.FC = () => {
       <div>
         <CheckboxField
           id="receivedMedicalHelp"
-          label="Did the injured person receive medical help?"
+          label="Czy osoba poszkodowana uzyskała pomoc medyczną?"
           checked={isDetails}
           onChange={checked => updateRecord(['medicalHelp'], checked ? { sickLeaveOnAccidentDay: false } : false)}
         />
@@ -410,20 +468,20 @@ const VictimExplanationForm: React.FC = () => {
           <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField
-                label="Date of First Aid"
+                label="Data pierwszej pomocy"
                 id="firstAidDate"
                 type="date"
                 value={medicalHelp.dateOfFirstAid}
                 onChange={e => handleChange(e, ['medicalHelp', 'dateOfFirstAid'])}
               />
               <InputField
-                label="Healthcare Facility Name"
+                label="Nazwa placówki medycznej"
                 id="facilityName"
                 value={medicalHelp.healthcareFacilityName}
                 onChange={e => handleChange(e, ['medicalHelp', 'healthcareFacilityName'])}
               />
               <InputField
-                label="Diagnosed Injury"
+                label="Zdiagnozowana kontuzja"
                 id="injury"
                 value={medicalHelp.diagnosedInjury}
                 onChange={e => handleChange(e, ['medicalHelp', 'diagnosedInjury'])}
@@ -432,18 +490,18 @@ const VictimExplanationForm: React.FC = () => {
 
               <CheckboxField
                 id="sickLeaveAccidentDay"
-                label="Received sick leave on the day of the accident?"
+                label="Otrzymano zwolnienie lekarskie na dzień wypadku?"
                 checked={medicalHelp.sickLeaveOnAccidentDay}
                 onChange={checked => updateRecord(['medicalHelp', 'sickLeaveOnAccidentDay'], checked)}
               />
             </div>
 
-            <h5 className="text-md font-semibold mt-4 text-blue-700 border-b pb-1">
-              Hospitalization Period (Optional)
+            <h5 className="text-md font-semibold mt-4 bg-green border-b pb-1">
+              Okres hospitalizacji (opcjonalnie)
             </h5>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <InputField
-                label="From"
+                label="Od"
                 id="hospFrom"
                 type="date"
                 value={medicalHelp.hospitalizationPeriod?.from}
@@ -455,7 +513,7 @@ const VictimExplanationForm: React.FC = () => {
                 }
               />
               <InputField
-                label="To"
+                label="Do"
                 id="hospTo"
                 type="date"
                 value={medicalHelp.hospitalizationPeriod?.to}
@@ -467,7 +525,7 @@ const VictimExplanationForm: React.FC = () => {
                 }
               />
               <InputField
-                label="Hospital Address"
+                label="Adres szpitala"
                 id="hospAddress"
                 value={medicalHelp.hospitalizationPeriod?.address}
                 onChange={e =>
@@ -479,10 +537,10 @@ const VictimExplanationForm: React.FC = () => {
               />
             </div>
 
-            <h5 className="text-md font-semibold mt-4 text-blue-700 border-b pb-1">Incapacity Period (Optional)</h5>
+            <h5 className="text-md font-semibold mt-4 bg-green border-b pb-1">Okres niezdolności do pracy (opcjonalnie)</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField
-                label="Incapacity From"
+                label="Od"
                 id="incapFrom"
                 type="date"
                 value={medicalHelp.incapacityPeriod?.from}
@@ -494,7 +552,7 @@ const VictimExplanationForm: React.FC = () => {
                 }
               />
               <InputField
-                label="Incapacity To"
+                label="Do"
                 id="incapTo"
                 type="date"
                 value={medicalHelp.incapacityPeriod?.to}
@@ -536,30 +594,38 @@ const VictimExplanationForm: React.FC = () => {
           }}
         >
           {/* Section 1: Personal Data */}
-          <Section title="1. Dane osobowe" defaultOpen>
+          <Section 
+            title="1. Dane osobowe" 
+            isOpen={openSections.personalData}
+            onToggle={(isOpen) => setOpenSections(prev => ({ ...prev, personalData: isOpen }))}
+          >
             {renderPersonSection}
           </Section>
 
           {/* Section 2: Accident Details */}
-          <Section title="2. Accident Details">
+          <Section 
+            title="2. Szczegóły wypadku"
+            isOpen={openSections.accidentDetails}
+            onToggle={(isOpen) => setOpenSections(prev => ({ ...prev, accidentDetails: isOpen }))}
+          >
             {renderAccidentDetails}
             <div className="space-y-4 mt-6">
               <InputField
-                label="Work Activity Before Accident"
+                label="Czynność wykonywana przed wypadkiem"
                 id="activityBefore"
                 value={record.workActivityBeforeAccident}
                 onChange={e => handleChange(e, ['workActivityBeforeAccident'])}
                 rows={3}
               />
               <InputField
-                label="Accident Circumstances"
+                label="Okoliczności wypadku"
                 id="circumstances"
                 value={record.accidentCircumstances}
                 onChange={e => handleChange(e, ['accidentCircumstances'])}
                 rows={3}
               />
               <InputField
-                label="Accident Cause"
+                label="Przyczyna wypadku"
                 id="cause"
                 value={record.accidentCause}
                 onChange={e => handleChange(e, ['accidentCause'])}
@@ -569,10 +635,14 @@ const VictimExplanationForm: React.FC = () => {
           </Section>
 
           {/* Section 3: Machine/Tool Related Accident */}
-          <Section title="3. Accident Caused by a Machine/Tool">
+          <Section 
+            title="3. Wypadek spowodowany przez maszynę/narzędzie"
+            isOpen={openSections.machineRelated}
+            onToggle={(isOpen) => setOpenSections(prev => ({ ...prev, machineRelated: isOpen }))}
+          >
             <CheckboxField
               id="causedByMachine"
-              label="Check if the accident was directly caused by a machine or tool."
+              label="Sprawdź czy wypadek był spowodowany bezpośrednio przez maszynę lub urządzenie."
               checked={record.causedByMachineOrTool !== false}
               onChange={checked =>
                 updateRecord(
@@ -615,10 +685,14 @@ const VictimExplanationForm: React.FC = () => {
           </Section>
 
           {/* Section 4: Other Machinery & Tools Involved */}
-          <Section title="4. Other Machinery/Tools Information">
+          <Section 
+            title="4. Inne maszyny i narzędzia biorące udział w zdarzeniu"
+            isOpen={openSections.otherMachinery}
+            onToggle={(isOpen) => setOpenSections(prev => ({ ...prev, otherMachinery: isOpen }))}
+          >
             <CheckboxField
               id="otherMachineryInvolved"
-              label="Were other machines or tools involved in the activity (but not the direct cause)?"
+              label="Czy jakieś inne maszyny lub urządzenia miały udział w zdarzeniu (nie bezpośrednio)"
               checked={record.machineryToolsInfo.involved}
               onChange={checked => updateRecord(['machineryToolsInfo', 'involved'], checked)}
             />
@@ -628,27 +702,31 @@ const VictimExplanationForm: React.FC = () => {
           </Section>
 
           {/* Section 5: Safety and Compliance */}
-          <Section title="5. Safety Measures and Compliance">
+          <Section 
+            title="5. Bezpieczeństwo i zgodność z procedurami"
+            isOpen={openSections.safety}
+            onToggle={(isOpen) => setOpenSections(prev => ({ ...prev, safety: isOpen }))}
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Protective Equipment */}
               <div>
-                <h3 className="font-semibold mb-2">Protective Equipment</h3>
+                <h3 className="font-semibold mb-2">Noszone ubrania ochronne</h3>
                 <SelectField
-                  label="Used Protective Equipment?"
+                  label="Czy w trakcie zdarzenia noszono ubrania ochronne?"
                   id="protectiveEquipment"
                   value={
                     typeof record.usedProtectiveEquipment === 'boolean'
                       ? record.usedProtectiveEquipment
-                        ? 'Yes'
-                        : 'No'
+                        ? 'Tak'
+                        : 'Nie'
                       : 'List Provided'
                   }
                   onChange={e => {
                     const val = e.target.value;
-                    if (val === 'Yes') updateRecord(['usedProtectiveEquipment'], ['']);
-                    if (val === 'No') updateRecord(['usedProtectiveEquipment'], false);
+                    if (val === 'Tak') updateRecord(['usedProtectiveEquipment'], ['']);
+                    if (val === 'Nie') updateRecord(['usedProtectiveEquipment'], false);
                   }}
-                  options={['No', 'Yes']} // Simplification: 'Yes' means provide list
+                  options={['Nie', 'Tak']} // Simplification: 'Tak' means provide list
                 />
 
                 {Array.isArray(record.usedProtectiveEquipment) && (
@@ -671,23 +749,23 @@ const VictimExplanationForm: React.FC = () => {
 
               {/* Safety Support */}
               <div>
-                <h3 className="font-semibold mb-2">Safety Support</h3>
+                <h3 className="font-semibold mb-2">Wsparcie ochronne</h3>
                 <SelectField
-                  label="Was Safety Support Used?"
+                  label="Czy wsparcie ochronne było używane?"
                   id="safetySupport"
                   value={
                     typeof record.usedSafetySupport === 'boolean'
                       ? record.usedSafetySupport
-                        ? 'Yes'
+                        ? 'Tak'
                         : 'No'
                       : 'Details Provided'
                   }
                   onChange={e => {
                     const val = e.target.value;
-                    if (val === 'Yes') updateRecord(['usedSafetySupport'], { requiredMoreThanOnePerson: false });
-                    if (val === 'No') updateRecord(['usedSafetySupport'], false);
+                    if (val === 'Tak') updateRecord(['usedSafetySupport'], { requiredMoreThanOnePerson: false });
+                    if (val === 'Nie') updateRecord(['usedSafetySupport'], false);
                   }}
-                  options={['No', 'Yes']}
+                  options={['Nie', 'Tak']}
                 />
 
                 {typeof record.usedSafetySupport === 'object' && record.usedSafetySupport !== null && (
@@ -706,35 +784,35 @@ const VictimExplanationForm: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 border-t pt-6">
               <CheckboxField
                 id="bhpCompliance"
-                label="BHP Compliance Met?"
+                label="Czy ukończono szkolenie BHP?"
                 checked={record.bhpCompliance}
                 onChange={checked => updateRecord(['bhpCompliance'], checked)}
               />
               <CheckboxField
                 id="properPreparation"
-                label="Proper Preparation Completed?"
+                label="Czy zrealizowano odpowiednie przygotowanie?"
                 checked={record.hasProperPreparation}
                 onChange={checked => updateRecord(['hasProperPreparation'], checked)}
               />
             </div>
 
             <div className="mt-6 border-t pt-6 bg-yellow-50/50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-3">BHP Training & Risk Assessment</h3>
+              <h3 className="font-semibold mb-3">Szkolenie BHP i zarządzanie ryzykiem</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <CheckboxField
                   id="completedTraining"
-                  label="Completed BHP Training?"
+                  label="Czy ukończono szkolenie BHP?"
                   checked={record.bhpTraining.completedTraining}
                   onChange={checked => updateRecord(['bhpTraining', 'completedTraining'], checked)}
                 />
                 <CheckboxField
                   id="hasRiskAssessment"
-                  label="Has Risk Assessment Document?"
+                  label="Czy posiadane dokumenty zarządzania ryzykiem?"
                   checked={record.bhpTraining.hasRiskAssessment}
                   onChange={checked => updateRecord(['bhpTraining', 'hasRiskAssessment'], checked)}
                 />
                 <InputField
-                  label="Risk Reduction Measures (Optional)"
+                  label="Środki zmniejszenia ryzyka (Opcjonalne)"
                   id="riskMeasures"
                   value={record.bhpTraining.riskReductionMeasures}
                   onChange={e => handleChange(e, ['bhpTraining', 'riskReductionMeasures'])}
@@ -746,31 +824,47 @@ const VictimExplanationForm: React.FC = () => {
           </Section>
 
           {/* Section 6: Intoxication */}
-          <Section title="6. Intoxication Status">
+          <Section 
+            title="6. Stan trzeźwości"
+            isOpen={openSections.intoxication}
+            onToggle={(isOpen) => setOpenSections(prev => ({ ...prev, intoxication: isOpen }))}
+          >
             <CheckboxField
               id="intoxicated"
-              label="Was the injured person intoxicated (alcohol/other substances)?"
+              label="Czy poszkodowany/a był/a pod wpływem (alkohol / inne używki)?"
               checked={record.intoxication.intoxicated}
               onChange={checked => updateRecord(['intoxication', 'intoxicated'], checked)}
             />
             {record.intoxication.intoxicated && (
               <div className="mt-4">
                 <SelectField
-                  label="Tested By"
+                  label="Testowane przez"
                   id="testedBy"
                   value={record.intoxication.testedBy ?? 'none'}
                   onChange={e => handleChange(e, ['intoxication', 'testedBy'])}
-                  options={['none', 'police', 'medicalHelp']}
+                  options={['Nikt', 'police', 'medicalHelp']}
                 />
               </div>
             )}
           </Section>
 
           {/* Section 7: State Authority Actions */}
-          <Section title="7. State Authority Actions">{renderStateAuthorityActions}</Section>
+          <Section 
+            title="7. Akcje nadzorcze"
+            isOpen={openSections.authorities}
+            onToggle={(isOpen) => setOpenSections(prev => ({ ...prev, authorities: isOpen }))}
+          >
+            {renderStateAuthorityActions}
+          </Section>
 
           {/* Section 8: Medical Help */}
-          <Section title="8. Medical Help & Consequences">{renderMedicalHelp}</Section>
+          <Section 
+            title="8. Udzielona pomoc medyczna"
+            isOpen={openSections.medicalHelp}
+            onToggle={(isOpen) => setOpenSections(prev => ({ ...prev, medicalHelp: isOpen }))}
+          >
+            {renderMedicalHelp}
+          </Section>
 
           {/* Action Buttons */}
           <div className="mt-10 pt-6 border-t flex justify-end space-x-4 mr-3">
@@ -779,13 +873,13 @@ const VictimExplanationForm: React.FC = () => {
               onClick={handleReset}
               className="flex items-center px-6 py-3 text-sm font-semibold bg-gray-200 rounded-xl shadow-md hover:bg-gray-300 transition duration-150 ease-in-out"
             >
-              <Eraser className="w-4 h-4 mr-2" /> Reset Form
+              <Eraser className="w-4 h-4 mr-2" /> Resetuj formularz
             </button>
             <button
               type="submit"
               className="flex items-center px-6 py-3 text-sm font-semibold text-white bg-primary rounded-xl shadow-lg hover:bg-green-700 transition duration-150 ease-in-out transform hover:scale-105"
             >
-              <Save className="w-4 h-4 mr-2" /> Save Record
+              <Save className="w-4 h-4 mr-2" /> Zapisz zmiany
             </button>
           </div>
         </form>
