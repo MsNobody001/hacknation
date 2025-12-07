@@ -7,7 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 load_dotenv()
 
-PROMPT_FILE_PATH = "prompts/document_advisor.txt"
+PROMPT_FILE_PATH = os.path.join(os.path.dirname(__file__), "prompts/document_advisor.txt")
 
 class DocumentAdvisorAgent:
     def __init__(self, prompt_file_path=PROMPT_FILE_PATH):

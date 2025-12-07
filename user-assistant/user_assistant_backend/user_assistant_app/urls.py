@@ -8,4 +8,5 @@ urlpatterns = [
     
     path('accident-statement-collector/', views.AccidentStatementCollectorView.as_view(), name="accident_statement_collector"),
     path('accident-report-collector/', views.AccidentReportCollectorView.as_view(), name="accident_report_collector"),
+    path('document-advisor/', views.DocumentAdvisorView.as_view(), name="document_advisor"),
 ]

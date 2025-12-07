@@ -5,6 +5,7 @@ from django.conf import settings
 from langchain_community.chat_message_histories import RedisChatMessageHistory
 from langchain.memory import ConversationBufferWindowMemory
 from .agents.accident_data_collector_agent import  AccidentDataCollectorAgent
+from .agents.document_advisor_agent import DocumentAdvisorAgent
 import os
 import redis
 import json
@@ -137,6 +138,40 @@ class AccidentReportCollectorView(APIView):
             "response": response, 
             "session_id": session_id,
             "collected_data": collected_data.model_dump()})
+
+
+class DocumentAdvisorView(APIView):
+
+    def post(self, request):
+        session_id = request.data.get("session_id") or MVP_SESSION_ID
+        data_type = request.data.get("data_type", "accident")  # "accident", "report", or "statement"
+        
+        # Select appropriate Redis key based on data_type
+        if data_type == "report":
+            redis_data_key = f"report_collected_data:{session_id}"
+        elif data_type == "statement":
+            redis_data_key = f"statement_collected_data:{session_id}"
+        else:
+            redis_data_key = f"accident_collected_data:{session_id}"
+        
+        collected_data_dict = get_redis_data(redis_data_key)
+        
+        if not collected_data_dict:
+            return Response({"error": f"No collected data found for {data_type}. Please complete data collection first."}, status=404)
+
+        try:
+            advisor = DocumentAdvisorAgent()
+            accident_data_json = json.dumps(collected_data_dict, ensure_ascii=False, indent=2)
+            document_checklist = advisor.generate_document_checklist(accident_data_json)
+            
+            return Response({
+                "document_checklist": document_checklist,
+                "session_id": session_id,
+                "data_type": data_type
+            })
+        except Exception as e:
+            print(f"Error generating document checklist: {e}")
+            return Response({"error": "Error generating document checklist"}, status=500)
 
 
 def get_redis_history(history_key):
