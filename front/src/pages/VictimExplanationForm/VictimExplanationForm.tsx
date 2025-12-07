@@ -61,6 +61,9 @@ const VictimExplanationForm: React.FC = () => {
 
   const [record, setRecord] = useState<AccidentExplanationRecord>(initialRecord);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [documentInput, setDocumentInput] = useState<string>('');
+  const [documentResponse, setDocumentResponse] = useState<string>('');
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState<boolean>(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     personalData: true,
     accidentDetails: false,
@@ -114,6 +117,39 @@ const VictimExplanationForm: React.FC = () => {
     setRecord(initialRecord);
     setStatusMessage('Form has been reset to initial state.');
     setTimeout(() => setStatusMessage(null), 5000);
+  };
+
+  const handleCheckDocuments = async () => {
+    setIsLoadingDocuments(true);
+    try {
+      const response = await fetch('https://webapp-user-assistant-ejhpgseje3f5c7ft.swedencentral-01.azurewebsites.net/document-advisor/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input: documentInput,
+          session_id:  localStorage.getItem('sessionId'),
+          data_type: 'report',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      setDocumentResponse(data.document_checklist || data.response || JSON.stringify(data));
+      setStatusMessage('Pobrano informacje o dokumentach.');
+      setTimeout(() => setStatusMessage(null), 5000);
+    } catch (error) {
+      console.error('Error fetching document advice:', error);
+      setStatusMessage('Błąd podczas pobierania informacji o dokumentach.');
+      setTimeout(() => setStatusMessage(null), 5000);
+    } finally {
+      setIsLoadingDocuments(false);
+    }
   };
 
   useEffect(() => {
@@ -571,7 +607,7 @@ const VictimExplanationForm: React.FC = () => {
   }, [record.medicalHelp, updateRecord, handleChange]);
 
   return (
-    <div className="min-h-screen flex justify-center">
+    <div className="min-h-screen flex justify-center relative">
       <div className="w-full max-w-5xl flex flex-col">
         <div>
           <h1 className="text-3xl font-extrabold mb-6 text-center border-b pb-3 flex-shrink-0 flex-grow-0">
@@ -865,6 +901,25 @@ const VictimExplanationForm: React.FC = () => {
           >
             {renderMedicalHelp}
           </Section>
+
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">Dokumenty do dostarczenia</h3>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={handleCheckDocuments}
+                disabled={isLoadingDocuments}
+                className="px-6 py-2 text-sm font-semibold text-white bg-primary rounded-xl shadow-lg hover:bg-green-700 transition duration-150 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoadingDocuments ? 'Ładowanie...' : 'Sprawdź dokumenty do dostarczenia'}
+              </button>
+            </div>
+            {documentResponse && (
+              <div className="mt-4 p-4 bg-white rounded-lg border border-gray-300">
+                <p className="text-gray-600 whitespace-pre-wrap">{documentResponse}</p>
+              </div>
+            )}
+          </div>
 
           {/* Action Buttons */}
           <div className="mt-10 pt-6 border-t flex justify-end space-x-4 mr-3">

@@ -152,6 +152,7 @@ export const AccidentReportForm = () => {
     });
   };
 
+
   useEffect(() => {
     if (!ctx.collectedData) return;
 
@@ -651,6 +652,7 @@ export const AccidentReportForm = () => {
               </div>
             </div>
           </Section>
+
 
           {/* Action Buttons */}
           <div className="mt-10 pt-6 border-t flex justify-end space-x-4 mr-3">
