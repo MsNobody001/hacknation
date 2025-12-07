@@ -99,12 +99,81 @@ def perform_formal_analysis_task(self, previous_result: dict, analysis_id: str) 
     except Exception as e:
         logger.error(f"Formal analysis failed for {analysis_id}: {e}")
         
-        # Update analysis status on final failure
         try:
             if self.request.retries >= self.max_retries:
                 analysis = Analysis.objects.get(id=analysis_id)
                 analysis.status = 'failed'
                 analysis.error_message = f"Formal analysis failed: {str(e)}"
+                analysis.save()
+        except Exception:
+            pass
+        
+        raise
+
+
+@shared_task(
+    bind=True,
+    name='clerk_assistant.tasks.analyze_recommendations_task',
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+)
+def analyze_recommendations_task(self, previous_result: dict, analysis_id: str) -> dict:
+    from clerk_assistant.services.recommendation_service import analyze_documentation_requirements
+    from clerk_assistant.models import Analysis
+    
+    logger.info(f"Starting recommendations task for analysis {analysis_id}")
+    
+    try:
+        result = analyze_documentation_requirements(analysis_id)
+        logger.info(f"Recommendations completed for {analysis_id}: "
+                   f"{result.get('recommendations_count', 0)} recommendations")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Recommendations failed for {analysis_id}: {e}")
+        
+        try:
+            if self.request.retries >= self.max_retries:
+                analysis = Analysis.objects.get(id=analysis_id)
+                analysis.status = 'failed'
+                analysis.error_message = f"Recommendations failed: {str(e)}"
+                analysis.save()
+        except Exception:
+            pass
+        
+        raise
+
+
+@shared_task(
+    bind=True,
+    name='clerk_assistant.tasks.generate_opinion_task',
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+)
+def generate_opinion_task(self, previous_result: dict, analysis_id: str) -> dict:
+    from clerk_assistant.services.opinion_service import generate_legal_opinion
+    from clerk_assistant.models import Analysis
+    
+    logger.info(f"Starting opinion generation task for analysis {analysis_id}")
+    
+    try:
+        result = generate_legal_opinion(analysis_id)
+        logger.info(f"Opinion generated for {analysis_id}: "
+                   f"status={result.get('stanowisko')}")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Opinion generation failed for {analysis_id}: {e}")
+        
+        try:
+            if self.request.retries >= self.max_retries:
+                analysis = Analysis.objects.get(id=analysis_id)
+                analysis.status = 'failed'
+                analysis.error_message = f"Opinion generation failed: {str(e)}"
                 analysis.save()
         except Exception:
             pass
@@ -154,6 +223,8 @@ def run_analysis_pipeline(analysis_id: str) -> str:
         process_ocr_task.s(analysis_id),
         detect_discrepancies_task.s(analysis_id),
         perform_formal_analysis_task.s(analysis_id),
+        analyze_recommendations_task.s(analysis_id),
+        generate_opinion_task.s(analysis_id),
         complete_analysis_task.s(analysis_id),
     )
     
@@ -180,4 +251,16 @@ def run_discrepancy_detection(analysis_id: str) -> str:
 def run_formal_analysis(analysis_id: str) -> str:
     result = perform_formal_analysis_task.delay({}, analysis_id)
     logger.info(f"Started formal analysis for {analysis_id}, task_id={result.id}")
+    return result.id
+
+
+def run_recommendations(analysis_id: str) -> str:
+    result = analyze_recommendations_task.delay({}, analysis_id)
+    logger.info(f"Started recommendations for {analysis_id}, task_id={result.id}")
+    return result.id
+
+
+def run_opinion_generation(analysis_id: str) -> str:
+    result = generate_opinion_task.delay({}, analysis_id)
+    logger.info(f"Started opinion generation for {analysis_id}, task_id={result.id}")
     return result.id

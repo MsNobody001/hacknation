@@ -5,7 +5,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
 
-from llm_utils import get_azure_llm, prepare_combined_documents_text
+from .llm_utils import get_azure_llm, prepare_combined_documents_text
 
 logger = logging.getLogger(__name__)
 
