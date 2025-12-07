@@ -6,5 +6,6 @@ langchain
 langchain-openai
 celery
 redis
+pytest
 azure-ai-documentintelligence
 pydantic

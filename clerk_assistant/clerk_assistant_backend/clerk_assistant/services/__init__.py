@@ -1,6 +1,8 @@
 from .ocr_service import process_ocr, process_ocr_sync
 from .discrepancy_service import detect_discrepancies, detect_discrepancies_sync
 from .formal_analysis_service import perform_formal_analysis, perform_formal_analysis_sync
+from .recommendation_service import analyze_documentation_requirements, analyze_documentation_requirements_sync
+from .opinion_service import generate_legal_opinion, generate_legal_opinion_sync
 from .llm_utils import get_azure_llm, prepare_documents_context, prepare_combined_documents_text
 
 __all__ = [
@@ -13,6 +15,12 @@ __all__ = [
     # Formal Analysis
     'perform_formal_analysis',
     'perform_formal_analysis_sync',
+    # Documentation Requirements
+    'analyze_documentation_requirements',
+    'analyze_documentation_requirements_sync',
+    # Legal Opinion
+    'generate_legal_opinion',
+    'generate_legal_opinion_sync',
     # LLM Utilities
     'get_azure_llm',
     'prepare_documents_context',
