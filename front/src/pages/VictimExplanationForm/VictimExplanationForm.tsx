@@ -513,7 +513,7 @@ const VictimExplanationForm: React.FC = () => {
   }, [record.medicalHelp, updateRecord, handleChange]);
 
   return (
-    <div className="min-h-screen  flex justify-center">
+    <div className="min-h-screen flex justify-center">
       <div className="w-full max-w-5xl flex flex-col">
         <div>
           <h1 className="text-3xl font-extrabold mb-6 text-center border-b pb-3 flex-shrink-0 flex-grow-0">

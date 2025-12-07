@@ -60,7 +60,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ initialMessages = [], on
     setIsTyping(true);
 
     chatService
-      .send_chat_msg(inputValue)
+      .send_chat_report(inputValue)
       .then(response => {
         pushMessage(response.response, 'agent');
         if (onCollectedData) onCollectedData(response.collected_data);
