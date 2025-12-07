@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'; // ADD useCallback
 import { Send, Bot } from 'lucide-react';
 import { Message } from '@/types';
+import { chatService } from '@/services/chat';
 
 export interface ChatWidgetProps {
   initialMessages?: Message[];
@@ -9,15 +10,27 @@ export interface ChatWidgetProps {
   agentAvatar?: string;
 }
 
+const MAX_HEIGHT_PX = 150;
+
 export const ChatWidget: React.FC<ChatWidgetProps> = ({ initialMessages = [] }) => {
   const [inputValue, setInputValue] = useState('');
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>(initialMessages.reverse());
   const [isTyping, setIsTyping] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const MAX_HEIGHT_PX = 150;
-  // FUNCTION to adjust textarea height
+
+  const pushMessage = useCallback((text: string, sender: 'user' | 'agent') => {
+    setMessages(prevMessages => [
+      ...prevMessages,
+      {
+        id: crypto.randomUUID(),
+        text: text,
+        sender,
+      },
+    ]);
+  }, []);
+
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -41,16 +54,24 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ initialMessages = [] }) 
 
     if (!inputValue.trim()) return;
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: inputValue,
-      sender: 'user',
-      timestamp: new Date(),
-    };
+    pushMessage(inputValue, 'user');
 
-    setMessages(prev => [...prev, newMessage]);
-    setInputValue('');
     setIsTyping(true);
+
+    chatService
+      .send_chat_msg(inputValue)
+      .then(response => {
+        pushMessage(response.response, 'agent');
+        setIsTyping(true);
+      })
+      .catch(() => {
+        void 0;
+      })
+      .finally(() => {
+        setIsTyping(false);
+      });
+
+    setInputValue('');
 
     // Reset textarea height to 1 row after sending
     if (textareaRef.current) {
@@ -75,28 +96,26 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ initialMessages = [] }) 
       `}
     >
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 bg-slate-50 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 bg-slate-50 space-y-6 flex flex-col justify-end">
         {/* Date Separator Example */}
         {/* <div className="flex justify-center">
           <span className="text-xs font-medium text-slate-400 bg-slate-200/50 px-3 py-1 rounded-full">Today</span>
         </div> */}
 
+        {messages.length === 0 && (
+          <div className="flex justify-center my-4">
+            <span className="text-xs text-center text-slate-500 italic">
+              Cześć! Jestem tutaj, aby pomóc Ci wypełnić formularz wyjaśnienia wypadku. Proszę, opowiedz mi, co się
+              stało.
+            </span>
+          </div>
+        )}
+
         {messages.map(msg => {
           const isUser = msg.sender === 'user';
-          const isSystem = msg.sender === 'system';
-
-          if (isSystem) {
-            return (
-              <div key={msg.id} className="flex justify-center my-4">
-                <span className="text-xs text-slate-500 italic">{msg.text}</span>
-              </div>
-            );
-          }
-
           return (
             <div key={msg.id} className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
               <div className={`flex max-w-[80%] ${isUser ? 'flex-row-reverse' : 'flex-row'} items-end gap-2`}>
-                {/* Avatar (only for agent) */}
                 {!isUser && (
                   <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
                     <Bot size={14} />
