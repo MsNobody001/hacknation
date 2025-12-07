@@ -4,3 +4,11 @@ migrations/
 .vscode
 .deployment
 static*/
+.env
+.env.*
+*.pyc
+*.pyo
+*.egg-info/
+venv
+env/
+.idea/
