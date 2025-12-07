@@ -76,37 +76,90 @@ class DocumentationRequirementItem(BaseModel):
 class DocumentationRequirementsResult(BaseModel):
     """Complete result of documentation requirements analysis."""
     
-    # Required documents that are mandatory
     mandatory_documents: list[DocumentationRequirementItem] = Field(
         default_factory=list,
         description="Dokumenty obowiązkowe które muszą być pozyskane"
     )
     
-    # Additional documents based on circumstances
     additional_documents: list[DocumentationRequirementItem] = Field(
         default_factory=list,
         description="Dodatkowe dokumenty w zależności od okoliczności wypadku"
     )
     
-    # Uncertainties about specific criteria
     criterion_uncertainties: list[CriterionUncertainty] = Field(
         default_factory=list,
         description="Wątpliwości dotycząca poszczególnych kryteriów wypadku"
     )
     
-    # Medical opinion recommendation
-    medical_opinion: MedicalOpinionRecommendation = Field(
+    medical_opinion: Optional[MedicalOpinionRecommendation] = Field(
+        default=None,
         description="Rekomendacja dotycząca opinii Głównego Lekarza Orzecznika ZUS"
     )
     
-    # Summary
     summary: str = Field(
+        default="",
         description="Podsumowanie i ogólne wnioski dotyczące dokumentacji"
     )
     
     next_steps: list[str] = Field(
         default_factory=list,
         description="Zalecane kroki do podjęcia w celu uzupełnienia dokumentacji"
+    )
+
+
+def _normalize_recommendation_response(result: dict) -> dict:
+    """Normalize LLM response from Polish keys to expected English keys."""
+    if "analiza" in result:
+        result = result["analiza"]
+    
+    polish_to_english = {
+        "dokumenty_obowiazkowe": "mandatory_documents",
+        "obowiazkowe": "mandatory_documents",
+        "dokumenty_dodatkowe": "additional_documents",
+        "dodatkowe": "additional_documents",
+        "watpliwosci": "criterion_uncertainties",
+        "watpliwosci_kryteriow": "criterion_uncertainties",
+        "opinia_medyczna": "medical_opinion",
+        "opinia_lekarska": "medical_opinion",
+        "podsumowanie": "summary",
+        "wnioski": "summary",
+        "nastepne_kroki": "next_steps",
+        "kroki": "next_steps",
+        "zalecenia": "next_steps",
+    }
+    
+    normalized = {}
+    for key, value in result.items():
+        normalized_key = key.lower().replace("ą", "a").replace("ę", "e").replace("ó", "o").replace("ś", "s").replace("ł", "l").replace("ż", "z").replace("ź", "z").replace("ć", "c").replace("ń", "n")
+        english_key = polish_to_english.get(normalized_key, key)
+        normalized[english_key] = value
+    
+    return normalized
+
+
+def _parse_document_item(item: dict) -> DocumentationRequirementItem:
+    """Parse document item from possibly Polish-keyed response."""
+    return DocumentationRequirementItem(
+        document_type=item.get("document_type") or item.get("typ_dokumentu") or item.get("typ") or "Nieznany",
+        reason=item.get("reason") or item.get("uzasadnienie") or item.get("powod") or "",
+        is_mandatory=item.get("is_mandatory", True) if "is_mandatory" in item else item.get("obowiazkowy", True),
+        context=item.get("context") or item.get("kontekst"),
+    )
+
+
+def _parse_medical_opinion(data: dict) -> MedicalOpinionRecommendation:
+    """Parse medical opinion from possibly Polish-keyed response."""
+    if not data:
+        return MedicalOpinionRecommendation(
+            requires_medical_opinion=False,
+            reasoning="Brak danych",
+            urgency="optional"
+        )
+    return MedicalOpinionRecommendation(
+        requires_medical_opinion=data.get("requires_medical_opinion") or data.get("wymagana") or data.get("konieczna") or False,
+        reasoning=data.get("reasoning") or data.get("uzasadnienie") or "",
+        injury_description=data.get("injury_description") or data.get("opis_urazu"),
+        urgency=data.get("urgency") or data.get("pilnosc") or "standard",
     )
 
 
@@ -128,6 +181,34 @@ def _analyze_documentation_requirements(llm, documents_text: str, business_conte
     })
     
     if isinstance(result, dict):
+        result = _normalize_recommendation_response(result)
+        
+        if "mandatory_documents" in result and isinstance(result["mandatory_documents"], list):
+            result["mandatory_documents"] = [
+                _parse_document_item(item) if isinstance(item, dict) else item
+                for item in result["mandatory_documents"]
+            ]
+        
+        if "additional_documents" in result and isinstance(result["additional_documents"], list):
+            result["additional_documents"] = [
+                _parse_document_item(item) if isinstance(item, dict) else item
+                for item in result["additional_documents"]
+            ]
+        
+        if "medical_opinion" in result and isinstance(result["medical_opinion"], dict):
+            result["medical_opinion"] = _parse_medical_opinion(result["medical_opinion"])
+        elif "medical_opinion" not in result or result["medical_opinion"] is None:
+            result["medical_opinion"] = MedicalOpinionRecommendation(
+                requires_medical_opinion=False,
+                reasoning="Brak rekomendacji",
+                urgency="optional"
+            )
+        
+        if "summary" not in result or not result["summary"]:
+            result["summary"] = "Analiza dokumentacji zakończona"
+        elif isinstance(result["summary"], dict):
+            result["summary"] = result["summary"].get("tekst") or result["summary"].get("opis") or str(result["summary"])
+        
         return DocumentationRequirementsResult(**result)
     
     return result
@@ -247,10 +328,21 @@ def analyze_documentation_requirements(analysis_id: str) -> dict:
     if uncertainties_summary:
         logger.info(f"Identified uncertainties: {'; '.join(uncertainties_summary)}")
     
-    if analysis_result.medical_opinion.requires_medical_opinion:
+    if analysis_result.medical_opinion and analysis_result.medical_opinion.requires_medical_opinion:
         logger.info(f"Medical opinion recommended: {analysis_result.medical_opinion.reasoning}")
     
-    # Build response
+    medical_opinion_data = {
+        "requires_medical_opinion": False,
+        "reasoning": "",
+        "urgency": "optional"
+    }
+    if analysis_result.medical_opinion:
+        medical_opinion_data = {
+            "requires_medical_opinion": analysis_result.medical_opinion.requires_medical_opinion,
+            "reasoning": analysis_result.medical_opinion.reasoning,
+            "urgency": analysis_result.medical_opinion.urgency
+        }
+    
     response = {
         "status": "completed",
         "recommendations_count": len(created_recommendations),
@@ -278,11 +370,7 @@ def analyze_documentation_requirements(analysis_id: str) -> dict:
             for uncertainty in analysis_result.criterion_uncertainties
             if uncertainty.is_uncertain
         ],
-        "medical_opinion": {
-            "requires_medical_opinion": analysis_result.medical_opinion.requires_medical_opinion,
-            "reasoning": analysis_result.medical_opinion.reasoning,
-            "urgency": analysis_result.medical_opinion.urgency
-        },
+        "medical_opinion": medical_opinion_data,
         "summary": analysis_result.summary,
         "next_steps": analysis_result.next_steps,
     }
