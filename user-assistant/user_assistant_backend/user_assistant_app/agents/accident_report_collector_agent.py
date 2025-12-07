@@ -22,6 +22,8 @@ class AccidentReportCollectorAgent(BaseDataCollectorAgent):
     def _create_tools(self):
         """Create tools specific for accident report collection"""
         
+        agent_self = self
+
         @tool
         def save_accident_info(
             accident_date: str = None,
@@ -69,41 +71,41 @@ class AccidentReportCollectorAgent(BaseDataCollectorAgent):
                 witnesses: Dane świadków (imię, nazwisko, adres)
             """
             if accident_date is not None:
-                self.collected_data.accident_date = accident_date
+                agent_self.collected_data.accident_date = accident_date
             if accident_time is not None:
-                self.collected_data.accident_time = accident_time
+                agent_self.collected_data.accident_time = accident_time
             if location is not None:
-                self.collected_data.location = location
+                agent_self.collected_data.location = location
             if work_start_time is not None:
-                self.collected_data.work_start_time = work_start_time
+                agent_self.collected_data.work_start_time = work_start_time
             if work_end_time is not None:
-                self.collected_data.work_end_time = work_end_time
+                agent_self.collected_data.work_end_time = work_end_time
             if injury_type is not None:
-                self.collected_data.injury_type = injury_type
+                agent_self.collected_data.injury_type = injury_type
             if circumstances is not None:
-                self.collected_data.circumstances = circumstances
+                agent_self.collected_data.circumstances = circumstances
             if cause is not None:
-                self.collected_data.cause = cause
+                agent_self.collected_data.cause = cause
             if place_description is not None:
-                self.collected_data.place_description = place_description
+                agent_self.collected_data.place_description = place_description
             if medical_help is not None:
-                self.collected_data.medical_help = medical_help
+                agent_self.collected_data.medical_help = medical_help
             if investigation is not None:
-                self.collected_data.investigation = investigation
+                agent_self.collected_data.investigation = investigation
             if machines_involved is not None:
-                self.collected_data.machines_involved = machines_involved
+                agent_self.collected_data.machines_involved = machines_involved
             if machine_condition is not None:
-                self.collected_data.machine_condition = machine_condition
+                agent_self.collected_data.machine_condition = machine_condition
             if proper_use is not None:
-                self.collected_data.proper_use = proper_use
+                agent_self.collected_data.proper_use = proper_use
             if machine_description is not None:
-                self.collected_data.machine_description = machine_description
+                agent_self.collected_data.machine_description = machine_description
             if machine_certification is not None:
-                self.collected_data.machine_certification = machine_certification
+                agent_self.collected_data.machine_certification = machine_certification
             if machine_registry is not None:
-                self.collected_data.machine_registry = machine_registry
+                agent_self.collected_data.machine_registry = machine_registry
             if witnesses is not None:
-                self.collected_data.witnesses = witnesses
+                agent_self.collected_data.witnesses = witnesses
             return "Data saved successfully"
         
         @tool  
@@ -126,15 +128,15 @@ class AccidentReportCollectorAgent(BaseDataCollectorAgent):
                 root_cause: Podstawowa przyczyna wypadku (źródło problemu - organizacyjne, proceduralne)
             """
             if activity_before_accident is not None:
-                self.collected_data.activity_before_accident = activity_before_accident
+                agent_self.collected_data.activity_before_accident = activity_before_accident
             if event_sequence is not None:
-                self.collected_data.event_sequence = event_sequence
+                agent_self.collected_data.event_sequence = event_sequence
             if direct_cause is not None:
-                self.collected_data.direct_cause = direct_cause
+                agent_self.collected_data.direct_cause = direct_cause
             if indirect_causes is not None:
-                self.collected_data.indirect_causes = indirect_causes
+                agent_self.collected_data.indirect_causes = indirect_causes
             if root_cause is not None:
-                self.collected_data.root_cause = root_cause
+                agent_self.collected_data.root_cause = root_cause
             return "Cause analysis saved successfully"
         
         return [save_accident_info, analyze_accident_causes]

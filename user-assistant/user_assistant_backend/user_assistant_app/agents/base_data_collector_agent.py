@@ -56,7 +56,13 @@ class BaseDataCollectorAgent:
     def get_collected_data(self):
         """Returns collected accident data"""
         return self.collected_data
-
+    
+    def load_collected_data(self, data_dict):
+        """Load previously collected data from dictionary"""
+        if data_dict:
+            for key, value in data_dict.items():
+                if hasattr(self.collected_data, key) and value is not None:
+                    setattr(self.collected_data, key, value)
 
 
 
