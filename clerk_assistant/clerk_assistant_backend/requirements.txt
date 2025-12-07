@@ -1,2 +1,9 @@
 django
 djangorestframework
+python-dotenv
+mssql-django
+azure-identity
+langchain
+langchain-openai
+celery
+redis
