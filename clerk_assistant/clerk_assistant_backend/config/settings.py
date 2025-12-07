@@ -100,13 +100,14 @@ DATABASES = {
         'HOST': 'sql-zus.database.windows.net',
         'PORT': '',
         'OPTIONS': {
-            'driver': 'ODBC Driver 18 for SQL Server',
-            'extra_params': 'Encrypt=yes;TrustServerCertificate=no;',
-            'authentication': {
-                'callback': get_azure_sql_token,
+            "driver": 'ODBC Driver 18 for SQL Server',
+            "extra_params": 'Encrypt=yes;TrustServerCertificate=no;',
+            "auth_token": get_azure_sql_token,
+            "connection_settings": {
+                "Authentication": "ActiveDirectoryManagedIdentity" 
             },
         },
-    }
+    },
 }
 
 # Password validation
