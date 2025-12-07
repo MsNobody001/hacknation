@@ -4,14 +4,14 @@ from langchain_openai import AzureChatOpenAI
 from langchain_core.tools import tool
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate
-from accident_models import AccidentInfo
+from .accident_models import AccidentInfo
+from pathlib import Path
 
 
 load_dotenv()
 
-
-PROMPT_FILE_PATH = "prompts/collect_accident_data.txt"
-
+BASE_DIR = Path(__file__).resolve()
+PROMPT_FILE_PATH = BASE_DIR.parent / "prompts" / "collect_accident_data.txt"
 class AccidentDataCollectorAgent:
     def __init__(self):
         self.llm = AzureChatOpenAI(
