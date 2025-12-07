@@ -11,6 +11,24 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+def get_azure_sql_token():
+    # Only import these when needed, as they might not be available locally
+    from azure.identity import DefaultAzureCredential
+    
+    # The default credential chain will automatically use the Managed Identity 
+    # when running on Azure App Service.
+    credential = DefaultAzureCredential()
+    
+    # Use the resource URL for Azure SQL Database
+    token = credential.get_token("https://database.windows.net/.default")
+    
+    # pyodbc expects the raw token string
+    return token.token
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,6 +56,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'clerk_assistant',
 ]
 
 MIDDLEWARE = [
@@ -75,11 +94,16 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'mssql',
+        'NAME': 'db-zus',
+        'HOST': 'sql-zus.database.windows.net',
+        'PORT': '',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 18 for SQL Server',
+            'extra_params': 'Encrypt=yes;TrustServerCertificate=no;', 
+        },
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -116,3 +140,18 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+
+# Redis
+REDIS_HOST = os.environ.get('REDIS_HOST')
+REDIS_PORT = os.environ.get('REDIS_PORT')
+REDIS_KEY = os.environ.get('REDIS_KEY')
+
+# Celery Configuration
+if REDIS_HOST and REDIS_KEY:
+    CELERY_BROKER_URL = f"rediss://:{REDIS_KEY}@{REDIS_HOST}:{REDIS_PORT}/0"
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
