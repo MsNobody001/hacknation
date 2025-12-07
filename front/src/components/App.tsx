@@ -3,8 +3,10 @@ import { Route, Routes } from 'react-router-dom';
 import { VictimExplanationForm } from '@/pages';
 import { Message } from '@/types';
 import { ChatWidget } from './ChatWidget';
+import { useCtx } from '@/context';
 
 const App = () => {
+  const ctx = useCtx();
   const chatHistory: Message[] = [];
 
   return (
@@ -16,7 +18,7 @@ const App = () => {
           </Routes>
         </div>
         <div className="margin-1 m-3 rounded-xl bg-neutral-100 max-h-full overflow-auto relative">
-          <ChatWidget initialMessages={chatHistory} />
+          <ChatWidget initialMessages={chatHistory} onCollectedData={collectedData => ctx.setCollectedData(collectedData)} />
         </div>
       </div>
     </>

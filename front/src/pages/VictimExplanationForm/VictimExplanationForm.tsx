@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Plus, X, Save, Eraser } from 'lucide-react';
 import { InputField } from '@/components/InputField/InputField';
 import {
@@ -11,6 +11,7 @@ import {
 import { CheckboxField } from '../../components/CheckboxField/CheckboxField';
 import { SelectField } from '@/components/SelectField';
 import { Section } from '@/components/Section';
+import { useCtx } from '@/context';
 
 const initialRecord: AccidentExplanationRecord = {
   personalData: {
@@ -55,14 +56,11 @@ const initialRecord: AccidentExplanationRecord = {
 };
 
 const VictimExplanationForm: React.FC = () => {
+  const ctx = useCtx();
+
   const [record, setRecord] = useState<AccidentExplanationRecord>(initialRecord);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  /**
-   * Handles deep updates to the state using a path array.
-   * @param path - An array of keys defining the path to the property to update.
-   * @param value - The new value for the property.
-   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateRecord = useCallback((path: (string | number)[], value: any) => {
     setRecord(prevRecord => {
@@ -108,7 +106,18 @@ const VictimExplanationForm: React.FC = () => {
     setTimeout(() => setStatusMessage(null), 5000);
   };
 
-  // --- RENDER HELPERS ---
+  useEffect(() => {
+    if (!ctx.collectedData) return;
+
+    if (ctx.collectedData.accident_date) updateRecord(['accidentDetails', 'date'], ctx.collectedData.accident_date);
+    if (ctx.collectedData.accident_time) updateRecord(['accidentDetails', 'time'], ctx.collectedData.accident_time);
+    if (ctx.collectedData.location) updateRecord(['accidentDetails', 'location'], ctx.collectedData.location);
+    if (ctx.collectedData.work_start_time) updateRecord(['accidentDetails', 'plannedWorkStart'], ctx.collectedData.work_start_time);
+    if (ctx.collectedData.work_end_time) updateRecord(['accidentDetails', 'plannedWorkEnd'], ctx.collectedData.work_end_time);
+    if (ctx.collectedData.injury_type) updateRecord(['medicalHelp', 'diagnosedInjury'], ctx.collectedData.injury_type);
+    if (ctx.collectedData.circumstances) updateRecord(['accidentCircumstances'], ctx.collectedData.circumstances);
+    if (ctx.collectedData.cause) updateRecord(['accidentCause'], ctx.collectedData.cause);
+  }, [ctx.collectedData, updateRecord]);
 
   const renderPersonSection = useMemo(
     () => (

@@ -1,18 +1,19 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'; // ADD useCallback
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Bot } from 'lucide-react';
-import { Message } from '@/types';
-import { chatService } from '@/services/chat';
+import { CollectedData, Message } from '@/types';
+import { chatService,  } from '@/services/chat';
 
 export interface ChatWidgetProps {
   initialMessages?: Message[];
   title?: string;
   subtitle?: string;
   agentAvatar?: string;
+  onCollectedData?: (data: CollectedData) => void;
 }
 
 const MAX_HEIGHT_PX = 150;
 
-export const ChatWidget: React.FC<ChatWidgetProps> = ({ initialMessages = [] }) => {
+export const ChatWidget: React.FC<ChatWidgetProps> = ({ initialMessages = [], onCollectedData }) => {
   const [inputValue, setInputValue] = useState('');
   const [messages, setMessages] = useState<Message[]>(initialMessages.reverse());
   const [isTyping, setIsTyping] = useState(false);
@@ -62,6 +63,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ initialMessages = [] }) 
       .send_chat_msg(inputValue)
       .then(response => {
         pushMessage(response.response, 'agent');
+        if (onCollectedData) onCollectedData(response.collected_data);
         setIsTyping(true);
       })
       .catch(() => {

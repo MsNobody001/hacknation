@@ -9,7 +9,8 @@
     "dev": "vite",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier --config .prettierrc 'src/**/*.ts' --write",
-    "lint": "eslint --ext .ts src"
+    "lint": "eslint --ext .ts src",
+    "tsc": "tsc --noEmit"
   },
   "author": "",
   "license": "ISC",
