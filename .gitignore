@@ -3,3 +3,14 @@ __pycache__
 migrations/
 .vscode
 .deployment
+.env
+.env.*
+*.pyc
+*.pyo
+*.egg-info/
+venv/
+env/
+.vscode/
+.idea/
+
+clerk_assistant/clerk_assistant_backend/clerk_assistant/services/ocr/out/
