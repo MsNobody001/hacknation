@@ -16,7 +16,7 @@ import { useCtx } from '@/context';
 const initialRecord: AccidentExplanationRecord = {
   personalData: {
     pesel: '',
-    idType: 'ID Card',
+    idType: '',
     idNumber: '',
     birthDate: '',
     birthPlace: '',
@@ -25,11 +25,11 @@ const initialRecord: AccidentExplanationRecord = {
     email: '',
   },
   accidentDetails: {
-    date: new Date().toISOString().split('T')[0],
-    time: '08:00',
+    date: '',
+    time: '',
     location: '',
-    plannedWorkStart: '07:00',
-    plannedWorkEnd: '15:00',
+    plannedWorkStart: '',
+    plannedWorkEnd: '',
   },
   workActivityBeforeAccident: '',
   accidentCircumstances: '',
