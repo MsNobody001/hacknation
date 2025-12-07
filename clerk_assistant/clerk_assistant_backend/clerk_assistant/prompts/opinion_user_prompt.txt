@@ -1,0 +1,41 @@
+Przeanalizuj poniższe dane dotyczące zdarzenia i wydaj opinię prawną na temat jego kwalifikacji jako wypadku przy pracy. Odpowiedź musi być w formacie JSON.
+
+## FORMALNA ANALIZA KRYTERIÓW
+{formal_analysis_json}
+
+## ROZBIEŻNOŚCI W DOKUMENTACJI
+{discrepancies_json}
+
+## REKOMENDACJE DOKUMENTACYJNE
+{recommendations_json}
+
+## TREŚĆ DOKUMENTÓW
+{documents_text}
+
+## DANE BIZNESOWE
+{business_context}
+
+### Wymagany format odpowiedzi (JSON):
+{{
+  "standpoint": {{
+    "legal_position": "wypadek_przy_pracy" | "nie_wypadek" | "wymagane_wyjaśnienia",
+    "confidence_level": "wysoki" | "średni" | "niski",
+    "summary": "2-3 zdania podsumowujące stanowisko"
+  }},
+  "criteria": [
+    {{
+      "criterion_name": "nazwa kryterium",
+      "fulfilled": true | false | null,
+      "reasoning": "szczegółowe uzasadnienie"
+    }}
+  ],
+  "issues": [
+    {{
+      "issue": "opis problemu",
+      "recommendation": "rekomendowana akcja",
+      "impact": "krytyczny" | "ważny" | "poboczny"
+    }}
+  ],
+  "conclusions": "wnioski i rekomendacje",
+  "confidence_level": "wysoki" | "średni" | "niski"
+}}
