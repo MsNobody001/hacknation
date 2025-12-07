@@ -3,3 +3,5 @@ langchain-openai
 python-dotenv
 django
 djangorestframework
+langchain_community
+redis
