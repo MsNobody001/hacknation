@@ -28,7 +28,7 @@ DEBUG = True
 
 HOST = os.environ.get('HOST', 'localhost')
 ALLOWED_HOSTS = [HOST,]
-
+APPEND_SLASH = False
 
 # Application definition
 
