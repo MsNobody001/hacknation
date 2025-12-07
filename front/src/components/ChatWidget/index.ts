@@ -1,0 +1,1 @@
+export { type ChatWidgetProps, ChatWidget } from './ChatWidget';
