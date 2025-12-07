@@ -101,7 +101,10 @@ DATABASES = {
         'PORT': '',
         'OPTIONS': {
             'driver': 'ODBC Driver 18 for SQL Server',
-            'extra_params': 'Encrypt=yes;TrustServerCertificate=no;', 
+            'extra_params': 'Encrypt=yes;TrustServerCertificate=no;',
+            'authentication': {
+                'callback': get_azure_sql_token,
+            },
         },
     }
 }
