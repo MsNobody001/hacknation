@@ -126,6 +126,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 # Redis
@@ -136,8 +137,14 @@ REDIS_KEY = os.environ.get('REDIS_KEY')
 # Celery Configuration
 if REDIS_HOST and REDIS_KEY:
     CELERY_BROKER_URL = f"rediss://:{REDIS_KEY}@{REDIS_HOST}:{REDIS_PORT}/0"
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+    CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+
+# Microsoft Foundry Configuration
+AZURE_OPENAI_ENDPOINT = os.environ.get('AZURE_OPENAI_ENDPOINT')
+AZURE_OPENAI_DEPLOYMENT = os.environ.get('AZURE_OPENAI_DEPLOYMENT')
+AZURE_OPENAI_API_VERSION = os.environ.get('AZURE_OPENAI_API_VERSION')
+AZURE_OPENAI_API_KEY = os.environ.get('AZURE_OPENAI_API_KEY')
