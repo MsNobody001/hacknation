@@ -14,10 +14,6 @@ class BaseDataCollectorAgent:
         self.llm = AzureChatOpenAI(
             azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
             openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],
-            temperature=0,  # Deterministyczne zachowanie - zawsze wywołuje narzędzia gdy powinien
-            max_tokens=None,
-            timeout=None,
-            max_retries=2,
         )
 
         self.collected_data = data_model_class()
