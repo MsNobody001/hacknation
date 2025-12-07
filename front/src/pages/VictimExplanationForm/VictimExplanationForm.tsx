@@ -292,7 +292,7 @@ const VictimExplanationForm: React.FC = () => {
   const renderMachineryInfo = (info: MachineInfo, basePath: (string | number)[]) => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border p-4 rounded-lg bg-blue-50/50">
       <InputField
-        label="Machine Name"
+        label="Nazwa maszyny"
         id="machName"
         value={info.name}
         onChange={e => handleChange(e, [...basePath, 'name'])}
