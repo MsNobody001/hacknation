@@ -98,7 +98,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ initialMessages = [], on
       `}
     >
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 bg-slate-50 space-y-6 flex flex-col justify-end">
+      <div className="flex-1 overflow-y-auto  bg-slate-50 flex flex-col justify-end">
+        <div className="h-full p-4 space-y-6 flex flex-col">
         {/* Date Separator Example */}
         {/* <div className="flex justify-center">
           <span className="text-xs font-medium text-slate-400 bg-slate-200/50 px-3 py-1 rounded-full">Today</span>
@@ -167,7 +168,10 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ initialMessages = [], on
         )}
 
         {/* Invisible div to scroll to */}
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef}
+        className="pt-1" />
+        </div>
+
       </div>
 
       {/* Input Area */}

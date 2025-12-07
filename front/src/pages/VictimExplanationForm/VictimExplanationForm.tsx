@@ -12,6 +12,7 @@ import { CheckboxField } from '../../components/CheckboxField/CheckboxField';
 import { SelectField } from '@/components/SelectField';
 import { Section } from '@/components/Section';
 import { useCtx } from '@/context';
+import { convertDate } from '@/utils';
 
 const initialRecord: AccidentExplanationRecord = {
   personalData: {
@@ -94,7 +95,6 @@ const VictimExplanationForm: React.FC = () => {
   );
 
   const handleSave = () => {
-    console.log('Saving record:', record);
     // Simulate an API save operation
     setStatusMessage('Record saved successfully! Check the console for the JSON structure.');
     setTimeout(() => setStatusMessage(null), 5000);
@@ -109,7 +109,7 @@ const VictimExplanationForm: React.FC = () => {
   useEffect(() => {
     if (!ctx.collectedData) return;
 
-    if (ctx.collectedData.accident_date) updateRecord(['accidentDetails', 'date'], ctx.collectedData.accident_date);
+    if (ctx.collectedData.accident_date) updateRecord(['accidentDetails', 'date'], convertDate(ctx.collectedData.accident_date));
     if (ctx.collectedData.accident_time) updateRecord(['accidentDetails', 'time'], ctx.collectedData.accident_time);
     if (ctx.collectedData.location) updateRecord(['accidentDetails', 'location'], ctx.collectedData.location);
     if (ctx.collectedData.work_start_time) updateRecord(['accidentDetails', 'plannedWorkStart'], ctx.collectedData.work_start_time);
