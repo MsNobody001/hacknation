@@ -15,7 +15,7 @@ const App = () => {
   const chatHistory: Message[] = [];
 
   const route = useLocation();
-  const showChatWidget = route.pathname !== '/';
+  const showChatWidget = route.pathname !== '/' && route.pathname !== '/analyze';
 
   return (
     <>
@@ -30,7 +30,7 @@ const App = () => {
 
       <div className="grid grid-cols-3 bg-[#00783440] text-[#007834] h-[calc(100vh-40px)]">
 
-        
+
         <div className={`${showChatWidget ? "col-span-2" : "col-span-3"}
       margin-1 m-3 rounded-xl bg-neutral-100 max-h-full overflow-auto`}>
           <Routes>
