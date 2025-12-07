@@ -134,23 +134,6 @@ def _analyze_documentation_requirements(llm, documents_text: str, business_conte
 
 
 def analyze_documentation_requirements(analysis_id: str) -> dict:
-    """
-    Analyze required documentation for a work accident analysis.
-    
-    Checks if current documentation is sufficient and recommends additional documents
-    to be obtained from the injured party. Identifies uncertainties about work accident
-    criteria and recommends medical opinion if needed.
-    
-    Args:
-        analysis_id: UUID of the Analysis instance
-        
-    Returns:
-        Dictionary with analysis results and recommendations
-        
-    Raises:
-        ValueError: If analysis not found
-        RuntimeError: If analysis fails
-    """
     from clerk_assistant.models import Analysis, OCRResult, Recommendation, DocumentType
     
     # Validate analysis exists

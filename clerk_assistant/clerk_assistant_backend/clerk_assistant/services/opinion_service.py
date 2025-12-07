@@ -12,10 +12,6 @@ from .llm_utils import get_azure_llm, prepare_combined_documents_text
 logger = logging.getLogger(__name__)
 
 
-# ============================================================================
-# PYDANTIC MODELS - Struktury danych dla opinii prawnej
-# ============================================================================
-
 class StandpointSection(BaseModel):
     """Stanowisko prawne w sprawie wypadku przy pracy."""
     legal_position: str = Field(
@@ -76,11 +72,6 @@ class OpinionStructure(BaseModel):
         description="Ogólny poziom pewności opinii: 'wysoki', 'średni', 'niski'"
     )
 
-
-# ============================================================================
-# PROMPTY SYSTEMOWE
-# ============================================================================
-
 def _load_prompt(filename: str) -> str:
     """
     Wczytaj prompt z pliku tekstowego.
@@ -101,7 +92,6 @@ def _load_prompt(filename: str) -> str:
         return ""
 
 
-# Próba wczytania z pliku, fallback na domyślne prompty
 try:
     OPINION_SYSTEM_PROMPT = _load_prompt('opinion_system_prompt.txt')
 except Exception:
@@ -127,10 +117,6 @@ except Exception:
 Na podstawie analizy wydaj opinię w formacie JSON."""
 
 
-# ============================================================================
-# FUNKCJE ANALIZY
-# ============================================================================
-
 def _analyze_opinion(
     llm,
     formal_analysis_data: dict,
@@ -139,23 +125,6 @@ def _analyze_opinion(
     documents_text: str,
     business_context: str
 ) -> OpinionStructure:
-    """
-    Przeprowadź analizę LLM i wygeneruj opinię prawną.
-    
-    Args:
-        llm: Instancja Azure LLM
-        formal_analysis_data: Dane z FormalAnalysis
-        discrepancies_data: Lista rozbieżności
-        recommendations_data: Lista rekomendacji
-        documents_text: Połączony tekst wszystkich dokumentów
-        business_context: Kontekst biznesowy
-        
-    Returns:
-        OpinionStructure - sparowana struktura opinii
-        
-    Raises:
-        Exception: Jeśli analiza LLM się nie powiedzie
-    """
     logger.info("Starting opinion analysis with LLM")
     
     opinion_prompt = ChatPromptTemplate.from_messages([
@@ -190,31 +159,7 @@ def _analyze_opinion(
         raise
 
 
-# ============================================================================
-# GŁÓWNE FUNKCJE SERWISU
-# ============================================================================
-
 def generate_legal_opinion(analysis_id: str) -> dict:
-    """
-    Wygeneruj kompletną opinię prawną na temat wypadku przy pracy.
-    
-    Proces:
-    1. Pobierz Analysis, OCRResult, FormalAnalysis z bazy danych
-    2. Pobierz dane z poprzednich analiz (Discrepancy, Recommendation)
-    3. Przygotuj kontekst i dokumenty
-    4. Wywołaj analizę LLM
-    5. Zapisz opinię w modelu Opinion
-    6. Zwróć strukturalną odpowiedź
-    
-    Args:
-        analysis_id: UUID identyfikujący Analysis
-        
-    Returns:
-        Dict z wynikami generowania opinii
-        
-    Raises:
-        Analysis.DoesNotExist: Gdy nie znaleziono Analysis
-    """
     from clerk_assistant.models import (
         Analysis, OCRResult, FormalAnalysis, 
         Discrepancy, Recommendation, Opinion
@@ -222,7 +167,6 @@ def generate_legal_opinion(analysis_id: str) -> dict:
     
     logger.info(f"Generating legal opinion for analysis {analysis_id}")
     
-    # ========== KROK 1: WALIDACJA I POBRANIE DANYCH ==========
     try:
         analysis = Analysis.objects.get(id=analysis_id)
         logger.info(f"Found analysis: {analysis.id}")
@@ -265,8 +209,6 @@ def generate_legal_opinion(analysis_id: str) -> dict:
     except FormalAnalysis.DoesNotExist:
         logger.warning(f"No formal analysis found for {analysis_id}")
     
-    # ========== KROK 2: POBIERZ DANE Z WCZEŚNIEJSZYCH ANALIZ ==========
-    
     # Rozbieżności
     discrepancies = Discrepancy.objects.filter(analysis=analysis)
     discrepancies_data = [
@@ -283,8 +225,8 @@ def generate_legal_opinion(analysis_id: str) -> dict:
         } for r in recommendations
     ]
     logger.info(f"Found {len(recommendations_data)} recommendations")
-    
-    # ========== KROK 3: PRZYGOTUJ KONTEKST ==========
+
+
     
     documents_text = prepare_combined_documents_text(ocr_list)
     logger.info(f"Prepared combined documents text: {len(documents_text)} characters")
@@ -302,7 +244,6 @@ def generate_legal_opinion(analysis_id: str) -> dict:
     
     business_context = "\n".join(business_context_parts) if business_context_parts else None
     
-    # ========== KROK 4: INICJUJ LLM I PRZEPROWADŹ ANALIZĘ ==========
     
     llm = get_azure_llm(temperature=0.15, max_tokens=4096)
     logger.info("Initialized Azure LLM with temperature=0.15")
@@ -321,7 +262,6 @@ def generate_legal_opinion(analysis_id: str) -> dict:
         logger.error(f"Opinion analysis failed: {e}")
         raise RuntimeError(f"Opinion analysis failed: {str(e)}")
     
-    # ========== KROK 5: ZAPISZ OPINIĘ W BAZIE ==========
     
     summary = opinion_result.standpoint.summary
     
@@ -366,7 +306,6 @@ def generate_legal_opinion(analysis_id: str) -> dict:
     
     logger.info(f"Opinion saved: {'Created' if created else 'Updated'} for analysis {analysis_id}")
     
-    # ========== KROK 6: ZWRÓĆ ODPOWIEDŹ ==========
     
     return {
         "status": "success",
@@ -383,17 +322,6 @@ def generate_legal_opinion(analysis_id: str) -> dict:
 
 
 def generate_legal_opinion_sync(analysis_id: str) -> dict:
-    """
-    Synchroniczny wrapper dla Celery task.
-    
-    Umożliwia uruchomienie generowania opinii jako zadania asynchronicznego.
-    
-    Args:
-        analysis_id: UUID identyfikujący Analysis
-        
-    Returns:
-        Dict z wynikami
-    """
     logger.info(f"Starting sync opinion generation for analysis {analysis_id}")
     
     try:
