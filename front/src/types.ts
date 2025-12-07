@@ -139,3 +139,13 @@ export interface SendChatMsgResponse {
     collected_data: CollectedData,
 }
 
+export type FileStatus = 'pending' | 'uploading' | 'complete' | 'error';
+
+export interface UploadFile {
+  id: string;
+  name: string;
+  size: number;
+  status: FileStatus;
+  progress: number; // 0 to 100
+  file: File; // Reference to the actual File object
+}
