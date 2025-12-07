@@ -150,6 +150,60 @@ i wydaj wniosek końcowy. Zwróć wyniki w formacie JSON."""
 
 
 
+def _parse_criterion_from_polish(data: dict) -> CriterionAnalysis:
+    """Parse a criterion analysis from possibly Polish-keyed response."""
+    # Handle missing_information - could be string, list, or None
+    missing_info = data.get("missing_information") or data.get("brakujace_informacje")
+    if isinstance(missing_info, list):
+        missing_info = "; ".join(str(item) for item in missing_info) if missing_info else None
+    elif missing_info == "":
+        missing_info = None
+    
+    return CriterionAnalysis(
+        is_fulfilled=data.get("is_fulfilled") or data.get("spelnione") or data.get("czy_spelnione"),
+        confidence=data.get("confidence") or data.get("pewnosc") or "medium",
+        evidence=data.get("evidence") or data.get("dowody") or [],
+        explanation=data.get("explanation") or data.get("uzasadnienie") or data.get("wyjasnienie") or "",
+        missing_information=missing_info,
+    )
+
+
+def _normalize_llm_response(result: dict) -> dict:
+    """Normalize LLM response from Polish keys to expected English keys."""
+    # If result has 'analiza' wrapper, unwrap it
+    if "analiza" in result:
+        result = result["analiza"]
+    
+    # Map Polish field names to English
+    polish_to_english = {
+        "naglosc": "suddenness",
+        "naglosc_zdarzenia": "suddenness",
+        "przyczyna_zewnetrzna": "external_cause",
+        "zewnetrzna_przyczyna": "external_cause",
+        "uraz": "injury",
+        "skutek_uraz": "injury",
+        "skutek_w_postaci_urazu": "injury",
+        "zwiazek_z_praca": "work_connection",
+        "zwiazek_praca": "work_connection",
+        "kwalifikuje_sie": "qualifies_as_work_accident",
+        "czy_wypadek_przy_pracy": "qualifies_as_work_accident",
+        "wniosek": "overall_conclusion",
+        "wniosek_koncowy": "overall_conclusion",
+        "podsumowanie": "overall_conclusion",
+        "zalecenia": "recommendations",
+        "rekomendacje": "recommendations",
+    }
+    
+    normalized = {}
+    for key, value in result.items():
+        # Normalize key (remove Polish diacritics and map)
+        normalized_key = key.lower().replace("ą", "a").replace("ę", "e").replace("ó", "o").replace("ś", "s").replace("ł", "l").replace("ż", "z").replace("ź", "z").replace("ć", "c").replace("ń", "n")
+        english_key = polish_to_english.get(normalized_key, key)
+        normalized[english_key] = value
+    
+    return normalized
+
+
 def _analyze_documents(llm, documents_text: str, business_context: str) -> FormalAnalysisResult:
     analysis_prompt = ChatPromptTemplate.from_messages([
         ("system", FORMAL_ANALYSIS_SYSTEM_PROMPT),
@@ -166,6 +220,54 @@ def _analyze_documents(llm, documents_text: str, business_context: str) -> Forma
     })
     
     if isinstance(result, dict):
+        # Normalize Polish keys to English
+        result = _normalize_llm_response(result)
+        
+        # Parse criterion analyses from possibly nested/Polish structure
+        for criterion in ["suddenness", "external_cause", "injury", "work_connection"]:
+            if criterion in result and isinstance(result[criterion], dict):
+                result[criterion] = _parse_criterion_from_polish(result[criterion])
+            elif criterion not in result:
+                # Try to find with Polish key patterns
+                result[criterion] = CriterionAnalysis(explanation="Brak danych do analizy")
+        
+        # Handle overall_conclusion - could be dict, string, or missing
+        overall_conclusion = result.get("overall_conclusion")
+        if isinstance(overall_conclusion, dict):
+            # Extract text from dict - try common keys
+            conclusion_text = (
+                overall_conclusion.get("wniosek") or
+                overall_conclusion.get("podsumowanie") or
+                overall_conclusion.get("tekst") or
+                overall_conclusion.get("text") or
+                overall_conclusion.get("description") or
+                overall_conclusion.get("opis")
+            )
+            if not conclusion_text:
+                # Build conclusion from dict contents
+                parts = []
+                for k, v in overall_conclusion.items():
+                    if isinstance(v, str):
+                        parts.append(f"{k}: {v}")
+                    elif isinstance(v, bool):
+                        parts.append(f"{k}: {'Tak' if v else 'Nie'}")
+                conclusion_text = "; ".join(parts) if parts else "Analiza zakończona"
+            result["overall_conclusion"] = conclusion_text
+        elif not overall_conclusion:
+            result["overall_conclusion"] = "Analiza zakończona - wymagana weryfikacja wyników"
+        
+        # Handle qualifies_as_work_accident - could be in various places
+        if "qualifies_as_work_accident" not in result or result.get("qualifies_as_work_accident") is None:
+            if isinstance(overall_conclusion, dict):
+                result["qualifies_as_work_accident"] = overall_conclusion.get("czy_wypadek_przy_pracy")
+        
+        # Handle recommendations - could be string or list
+        recommendations = result.get("recommendations")
+        if isinstance(recommendations, str):
+            result["recommendations"] = [recommendations] if recommendations else []
+        elif not recommendations:
+            result["recommendations"] = []
+            
         return FormalAnalysisResult(**result)
     
     return result

@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,7 +30,7 @@ SECRET_KEY = 'django-insecure-4vu=tq@#mj^d1e+7)wqf9sz&wsrahdf9jr9%#r$ox(#m-s43%b
 DEBUG = True
 
 HOST = os.environ.get('HOST', 'localhost')
-ALLOWED_HOSTS = [HOST,]
+ALLOWED_HOSTS = [HOST,"127.0.0.1"]
 APPEND_SLASH = False
 
 # Application definition
@@ -127,6 +130,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files (User uploads)
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / "media"
 
 
 # Redis

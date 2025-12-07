@@ -50,8 +50,10 @@ class DiscrepancyItem(BaseModel):
 class DiscrepancyAnalysisResult(BaseModel):
     """Complete result of discrepancy analysis."""
     discrepancies: list[DiscrepancyItem] = Field(default_factory=list, description="Lista wykrytych rozbieżności")
-    analysis_summary: str = Field(description="Podsumowanie przeprowadzonej analizy")
-    documents_analyzed: int = Field(description="Liczba przeanalizowanych dokumentów")
+    analysis_summary: Optional[str] = Field(default="", description="Podsumowanie przeprowadzonej analizy")
+    documents_analyzed: int = Field(default=0, description="Liczba przeanalizowanych dokumentów")
+    # Handle alternative field names the LLM might return
+    analysis_steps: Optional[list] = Field(default=None, exclude=True)
 
 
 EXTRACTION_SYSTEM_PROMPT = """Jesteś ekspertem ds. analizy dokumentacji wypadkowej w Polsce.
@@ -179,6 +181,20 @@ def _compare_documents(llm, extracted_data: list[ExtractedDocumentData]) -> Disc
     
     if isinstance(result, dict):
         result["documents_analyzed"] = len(extracted_data)
+        # Handle case where LLM returns analysis_steps instead of analysis_summary
+        if "analysis_summary" not in result or not result.get("analysis_summary"):
+            if "analysis_steps" in result:
+                # Convert analysis_steps to summary string
+                steps = result.pop("analysis_steps", [])
+                if steps:
+                    result["analysis_summary"] = "; ".join(
+                        str(step.get("description", step)) if isinstance(step, dict) else str(step)
+                        for step in steps
+                    )
+                else:
+                    result["analysis_summary"] = "Analiza zakończona"
+            else:
+                result["analysis_summary"] = "Analiza zakończona"
         return DiscrepancyAnalysisResult(**result)
     
     return result
