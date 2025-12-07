@@ -6,6 +6,12 @@ export interface CreateAnalyzeResponse {
   id: string,
 }
 
+export interface FormalAnalysisResponse {
+  qualifies_as_work_accident: boolean,
+  overall_conclusion: string,
+  recommendations: string,
+}
+
 export const analyzeService = {
   uploadFiles: async (id: string, files: File[], options?: {
     onProgress: (progress: number) => void;
@@ -42,11 +48,15 @@ export const analyzeService = {
     return response.data;
   },
   processing: async (id: string) => {
-    const response = await axios.post<{ date: unknown }>(`${ANALYZE_API_URL}${id}/processing/`)
+    const response = await axios.post<{ status: string }>(`${ANALYZE_API_URL}${id}/processing/`)
+    return response.data;
+  },
+  status: async (id: string) => {
+    const response = await axios.get<{ status: string }>(`${ANALYZE_API_URL}${id}/status/`)
     return response.data;
   },
   getFormalAnalysis: async (id: string) => {
-    const response = await axios.post<{ date: unknown }>(`${ANALYZE_API_URL}${id}/formal-analysis/`)
+    const response = await axios.get<FormalAnalysisResponse>(`${ANALYZE_API_URL}${id}/formal-analysis/`)
     return response.data;
   }
 };
